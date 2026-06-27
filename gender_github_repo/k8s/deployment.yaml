@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gender-api-deployment
+  labels:
+    app: gender-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gender-api
+  template:
+    metadata:
+      labels:
+        app: gender-api
+    spec:
+      containers:
+        - name: gender-api
+          image: gender-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
