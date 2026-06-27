@@ -1,0 +1,64 @@
+// Jenkins declarative pipeline for the Flight Price Prediction service.
+// Each stage runs REAL commands. Point a Jenkins job at this repo and run it;
+// screenshot the green build for your report.
+pipeline {
+    agent any
+
+    environment {
+        IMAGE = "flight-price-api:${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Setup Python') {
+            steps {
+                sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r flight_api/requirements.txt pytest
+                '''
+            }
+        }
+
+        stage('Test API') {
+            steps {
+                sh '''
+                    . .venv/bin/activate
+                    pytest -q tests/
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $IMAGE -f flight_api/Dockerfile flight_api'
+            }
+        }
+
+        stage('Smoke Test Container') {
+            steps {
+                sh '''
+                    docker run -d --rm -p 8000:8000 --name flight-api-ci $IMAGE
+                    sleep 6
+                    curl -sf http://localhost:8000/health
+                    docker stop flight-api-ci
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker rmi $IMAGE || true'
+            cleanWs()
+        }
+        success { echo "Build ${env.BUILD_NUMBER} succeeded." }
+        failure { echo "Build ${env.BUILD_NUMBER} failed." }
+    }
+}
