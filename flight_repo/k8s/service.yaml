@@ -1,0 +1,17 @@
+# Kubernetes Service for the Flight Price Prediction API
+# Exposes the deployment on NodePort 30036
+# Selector must match deployment.yaml labels (app: flight-price)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: flight-price-service
+spec:
+  type: NodePort        # accessible externally via node IP + nodePort
+  selector:
+    app: flight-price   # routes traffic to pods with this label
+  ports:
+    - protocol: TCP
+      port: 80          # service port (internal cluster traffic)
+      targetPort: 8000  # container port the Flask app listens on
+      nodePort: 30036   # external port — access via localhost:30036

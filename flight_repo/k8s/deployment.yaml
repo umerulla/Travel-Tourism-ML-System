@@ -1,0 +1,45 @@
+# Kubernetes Deployment for the Flight Price Prediction API
+# Runs 2 replicas for high availability
+# Labels must match service.yaml selector (app: flight-price)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flight-price-deployment
+  labels:
+    app: flight-price
+spec:
+  replicas: 2  # 2 pods running in parallel for redundancy
+  selector:
+    matchLabels:
+      app: flight-price  # must match Service selector
+  template:
+    metadata:
+      labels:
+        app: flight-price
+    spec:
+      containers:
+        - name: flight-price-api
+          image: flight-price-api:latest
+          imagePullPolicy: IfNotPresent  # use local image, no registry needed
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:          # guaranteed minimum resources per pod
+              cpu: "100m"
+              memory: "256Mi"
+            limits:            # hard cap — pod is killed if exceeded
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:      # pod only receives traffic after this passes
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:       # pod is restarted automatically if this fails
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
