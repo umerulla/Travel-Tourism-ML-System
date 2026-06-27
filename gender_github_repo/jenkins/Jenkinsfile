@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    environment { IMAGE = "gender-api:${env.BUILD_NUMBER}" }
+    stages {
+        stage('Checkout') { steps { checkout scm } }
+        stage('Setup & Test') {
+            steps {
+                sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install flask pytest
+                    pytest -q tests/
+                '''
+            }
+        }
+        stage('Build Image') { steps { sh 'docker build -t $IMAGE -f gender_api/Dockerfile gender_api' } }
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                    docker run -d --rm -p 8000:8000 --name gender-ci $IMAGE
+                    sleep 25
+                    curl -sf http://localhost:8000/health
+                    docker stop gender-ci
+                '''
+            }
+        }
+    }
+    post { always { cleanWs() } }
+}
