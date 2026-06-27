@@ -1,0 +1,28 @@
+{
+  "feature_order": [
+    "from",
+    "to",
+    "flightType",
+    "agency",
+    "time",
+    "distance"
+  ],
+  "categorical_features": [
+    "from",
+    "to",
+    "flightType",
+    "agency"
+  ],
+  "numeric_features": [
+    "time",
+    "distance"
+  ],
+  "target": "price",
+  "model_file": "xgb_flight_regressor.joblib",
+  "encoder_files": {
+    "from": "from_label_encoder.joblib",
+    "to": "to_label_encoder.joblib",
+    "flightType": "flightType_label_encoder.joblib",
+    "agency": "agency_label_encoder.joblib"
+  }
+}
